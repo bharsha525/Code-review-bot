@@ -169,10 +169,8 @@ function getActiveFocuses() {
 
 // ── Call Anthropic API ─────────────────────────────
 async function callAPI(prompt) {
-  const GEMINI_API_KEY = 'GEMINI_API_KEY_PLACEHOLDER'; // paste your key here
-  
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+    '/api/gemini',
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
