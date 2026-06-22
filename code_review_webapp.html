@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CodeReview AI — Smart Code Analysis</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+/* ─── Reset & Tokens ─────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --font-ui:   'Inter', system-ui, sans-serif;
+  --font-code: 'JetBrains Mono', 'Fira Mono', monospace;
+
+  /* Palette – light */
+  --bg:          #F7F6F3;
+  --surface:     #FFFFFF;
+  --surface-2:   #F0EEE9;
+  --border:      rgba(0,0,0,0.08);
+  --border-md:   rgba(0,0,0,0.15);
+  --text-1:      #18181A;
+  --text-2:      #5A5A60;
+  --text-3:      #9090A0;
+
+  /* Accent – indigo/violet */
+  --accent:      #5B50D6;
+  --accent-soft: #EEEDFE;
+  --accent-mid:  #7F77DD;
+  --accent-dark: #3C3489;
+
+  /* Severity */
+  --c-critical:  #C0392B; --c-critical-bg: #FDECEB;
+  --c-warning:   #9B590A; --c-warning-bg:  #FEF3E2;
+  --c-info:      #1D5FA8; --c-info-bg:     #EAF2FD;
+  --c-positive:  #0D7A55; --c-positive-bg: #E6F6F0;
+  --c-best:      #6B35C1; --c-best-bg:     #F3EEFF;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+
+  --nav-h: 60px;
+  --transition: 0.18s ease;
+}
+
+/* Dark mode */
+[data-theme="dark"] {
+  --bg:        #141416;
+  --surface:   #1E1E22;
+  --surface-2: #26262C;
+  --border:    rgba(255,255,255,0.07);
+  --border-md: rgba(255,255,255,0.14);
+  --text-1:    #F0EDE8;
+  --text-2:    #9A9AA8;
+  --text-3:    #60606C;
+  --accent:        #7F77DD;
+  --accent-soft:   #26215C;
+  --accent-mid:    #AFA9EC;
+  --accent-dark:   #CECBF6;
+  --c-critical:  #F08080; --c-critical-bg: #2E1A1A;
+  --c-warning:   #F0C070; --c-warning-bg:  #2E2210;
+  --c-info:      #70A8F0; --c-info-bg:     #102030;
+  --c-positive:  #50D0A0; --c-positive-bg: #102820;
+  --c-best:      #C090F0; --c-best-bg:     #2A1840;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+}
+
+/* ─── Base ───────────────────────────────────────────────── */
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-ui);
+  background: var(--bg);
+  color: var(--text-1);
+  min-height: 100vh;
+  line-height: 1.6;
+  transition: background var(--transition), color var(--transition);
+}
+
+/* ─── Navbar ─────────────────────────────────────────────── */
+.navbar {
+  position: sticky; top: 0; z-index: 100;
+  height: var(--nav-h);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+}
+.nav-inner {
+  max-width: 1280px; margin: 0 auto;
+  height: 100%; padding: 0 1.5rem;
+  display: flex; align-items: center; gap: 2rem;
+}
+.nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.brand-icon {
+  width: 34px; height: 34px; border-radius: var(--radius-md);
+  background: var(--accent); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px;
+}
+.brand-name { font-size: 16px; font-weight: 600; color: var(--text-1); letter-spacing: -0.3px; }
+.brand-ai { color: var(--accent); }
+
+.nav-links { display: flex; gap: 4px; margin-left: auto; }
+.nav-link {
+  padding: 6px 14px; border-radius: var(--radius-md);
+  font-size: 14px; font-weight: 500; color: var(--text-2);
+  text-decoration: none; cursor: pointer;
+  transition: all var(--transition);
+}
+.nav-link:hover { background: var(--surface-2); color: var(--text-1); }
+.nav-link.active { background: var(--accent-soft); color: var(--accent-dark); }
+
+.theme-toggle {
+  width: 36px; height: 36px; border-radius: var(--radius-md);
+  border: 1px solid var(--border-md); background: transparent;
+  color: var(--text-2); font-size: 17px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--transition);
+}
+.theme-toggle:hover { background: var(--surface-2); color: var(--text-1); }
+
+/* ─── Pages ──────────────────────────────────────────────── */
+.main { max-width: 1280px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+.page { display: none; }
+.page.active { display: block; }
+
+.page-hero { margin-bottom: 2rem; }
+.hero-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 600; letter-spacing: -0.8px; line-height: 1.2;
+  color: var(--text-1);
+}
+.hero-accent { color: var(--accent); }
+.hero-sub { font-size: 15px; color: var(--text-2); margin-top: 10px; max-width: 580px; }
+
+/* ─── Review Layout ──────────────────────────────────────── */
+.review-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+@media (max-width: 900px) { .review-layout { grid-template-columns: 1fr; } }
+
+/* ─── Panel ──────────────────────────────────────────────── */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+.panel-title { font-size: 13px; font-weight: 500; color: var(--text-2); display: flex; align-items: center; gap: 7px; }
+.panel-title i { font-size: 15px; }
+.panel-actions { display: flex; align-items: center; gap: 8px; }
+
+.select-lang {
+  font-size: 12px; padding: 5px 9px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-md);
+  background: var(--surface); color: var(--text-1);
+  cursor: pointer; font-family: var(--font-ui);
+}
+
+.btn-icon {
+  width: 30px; height: 30px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: transparent;
+  color: var(--text-2); font-size: 15px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--transition);
+}
+.btn-icon:hover { background: var(--bg); color: var(--text-1); }
+
+/* ─── Focus chips ────────────────────────────────────────── */
+.focus-row {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  padding: 10px 16px; border-bottom: 1px solid var(--border);
+}
+.focus-label { font-size: 11px; color: var(--text-3); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 20px;
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  border: 1px solid var(--border-md); color: var(--text-2);
+  background: var(--surface); transition: all var(--transition);
+  user-select: none;
+}
+.chip input { display: none; }
+.chip i { font-size: 13px; }
+.chip.active { background: var(--accent-soft); border-color: var(--accent-mid); color: var(--accent-dark); }
+.chip:hover { border-color: var(--accent-mid); }
+
+/* ─── Editor ─────────────────────────────────────────────── */
+.editor-wrap { position: relative; }
+textarea#codeInput {
+  width: 100%; min-height: 340px;
+  font-family: var(--font-code); font-size: 13px; line-height: 1.7;
+  padding: 16px; resize: vertical; outline: none;
+  border: none; background: var(--surface); color: var(--text-1);
+  border-bottom: 1px solid var(--border);
+}
+textarea#codeInput:focus { background: var(--bg); }
+
+.editor-footer {
+  display: flex; gap: 16px; padding: 6px 16px;
+  background: var(--surface-2); border-bottom: 1px solid var(--border);
+}
+.line-count, .char-count { font-size: 11px; color: var(--text-3); font-family: var(--font-code); }
+
+/* ─── Review Button ──────────────────────────────────────── */
+.btn-review {
+  width: 100%; padding: 14px;
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  font-size: 15px; font-weight: 600; cursor: pointer;
+  background: var(--accent); color: #fff;
+  border: none; transition: all var(--transition);
+  font-family: var(--font-ui);
+}
+.btn-review:hover { background: var(--accent-dark); }
+.btn-review:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-review i { font-size: 17px; }
+
+/* ─── Results Panel ──────────────────────────────────────── */
+.panel-results { min-height: 480px; }
+
+.results-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 480px; gap: 10px; color: var(--text-3);
+}
+.results-empty i { font-size: 40px; opacity: 0.5; }
+.results-empty p { font-size: 15px; font-weight: 500; color: var(--text-2); }
+.results-empty span { font-size: 13px; }
+
+/* ─── Score Bar ──────────────────────────────────────────── */
+.score-section {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+.score-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.score-label { font-size: 12px; font-weight: 500; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.5px; }
+.score-number { font-size: 28px; font-weight: 600; line-height: 1; }
+.s-high { color: var(--c-positive); }
+.s-mid  { color: var(--c-warning); }
+.s-low  { color: var(--c-critical); }
+.score-bar-bg { height: 5px; background: var(--border-md); border-radius: 99px; overflow: hidden; }
+.score-bar-fill { height: 100%; border-radius: 99px; transition: width 0.6s ease; }
+.score-summary { font-size: 13px; color: var(--text-2); margin-top: 10px; line-height: 1.6; }
+
+/* ─── Issue Cards ────────────────────────────────────────── */
+.issues-list { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+
+.issue-card {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: box-shadow var(--transition);
+}
+.issue-card:hover { box-shadow: var(--shadow-sm); }
+
+.issue-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; cursor: pointer;
+  background: var(--surface);
+}
+.sev-icon {
+  width: 26px; height: 26px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0;
+}
+.ic-critical { background: var(--c-critical-bg); color: var(--c-critical); }
+.ic-warning  { background: var(--c-warning-bg);  color: var(--c-warning); }
+.ic-info     { background: var(--c-info-bg);     color: var(--c-info); }
+.ic-positive { background: var(--c-positive-bg); color: var(--c-positive); }
+.ic-best     { background: var(--c-best-bg);     color: var(--c-best); }
+
+.issue-head-text { flex: 1; min-width: 0; }
+.issue-title { font-size: 13px; font-weight: 500; color: var(--text-1); }
+.sev-badge {
+  font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500;
+  white-space: nowrap; flex-shrink: 0;
+}
+.sb-critical { background: var(--c-critical-bg); color: var(--c-critical); }
+.sb-warning  { background: var(--c-warning-bg);  color: var(--c-warning); }
+.sb-info     { background: var(--c-info-bg);     color: var(--c-info); }
+.sb-positive { background: var(--c-positive-bg); color: var(--c-positive); }
+.sb-best     { background: var(--c-best-bg);     color: var(--c-best); }
+
+.issue-chevron { font-size: 14px; color: var(--text-3); transition: transform var(--transition); flex-shrink: 0; }
+.issue-card.open .issue-chevron { transform: rotate(90deg); }
+
+.issue-body-wrap {
+  display: none; padding: 0 14px 14px 50px;
+  border-top: 1px solid var(--border); background: var(--surface);
+}
+.issue-card.open .issue-body-wrap { display: block; padding-top: 12px; }
+.issue-desc { font-size: 13px; color: var(--text-2); line-height: 1.6; margin-bottom: 10px; }
+
+/* ─── Code blocks ────────────────────────────────────────── */
+.code-block {
+  background: var(--surface-2);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  overflow: hidden; margin-top: 8px;
+}
+.code-block-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 12px; border-bottom: 1px solid var(--border);
+}
+.code-block-label { font-size: 11px; color: var(--text-3); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+.copy-btn {
+  font-size: 11px; color: var(--text-3); background: none; border: none; cursor: pointer;
+  display: flex; align-items: center; gap: 4px; font-family: var(--font-ui);
+}
+.copy-btn:hover { color: var(--accent); }
+pre {
+  font-family: var(--font-code); font-size: 12.5px; line-height: 1.7;
+  padding: 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-all;
+  color: var(--text-1);
+}
+
+/* ─── Complexity Table ───────────────────────────────────── */
+.complexity-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+.complexity-table th {
+  padding: 8px 12px; text-align: left; background: var(--surface-2);
+  font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-3);
+  border-bottom: 1px solid var(--border);
+}
+.complexity-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); color: var(--text-1); }
+.complexity-table tr:last-child td { border-bottom: none; }
+.complexity-table td:first-child { color: var(--text-2); font-weight: 500; }
+.complexity-val { font-family: var(--font-code); color: var(--accent); font-weight: 500; }
+.complexity-best { color: var(--c-positive); font-weight: 600; }
+
+/* ─── Best Solution section ──────────────────────────────── */
+.best-section {
+  margin: 12px; border-radius: var(--radius-md);
+  border: 1px solid rgba(107, 53, 193, 0.3);
+  background: var(--c-best-bg); overflow: hidden;
+}
+.best-header {
+  display: flex; align-items: center; gap: 9px;
+  padding: 12px 14px; border-bottom: 1px solid rgba(107,53,193,0.2);
+}
+.best-header i { color: var(--c-best); font-size: 18px; }
+.best-header h3 { font-size: 14px; font-weight: 600; color: var(--c-best); }
+.best-header .best-badge {
+  margin-left: auto; font-size: 11px; background: var(--c-best);
+  color: #fff; padding: 2px 8px; border-radius: 20px; font-weight: 500;
+}
+.best-body { padding: 12px 14px; }
+.best-desc { font-size: 13px; color: var(--text-2); line-height: 1.6; margin-bottom: 12px; }
+
+/* ─── Spinner ────────────────────────────────────────────── */
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.65s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── History Page ───────────────────────────────────────── */
+.history-list { display: flex; flex-direction: column; gap: 12px; }
+.empty-history {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 4rem 2rem; gap: 10px; color: var(--text-3);
+}
+.empty-history i { font-size: 40px; opacity: 0.5; }
+.empty-history p { font-size: 15px; font-weight: 500; color: var(--text-2); }
+.empty-history span { font-size: 13px; }
+
+.history-item {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 16px 20px;
+  display: flex; align-items: center; gap: 16px; cursor: pointer;
+  transition: box-shadow var(--transition);
+}
+.history-item:hover { box-shadow: var(--shadow-md); }
+.history-score-badge {
+  width: 44px; height: 44px; border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 600; flex-shrink: 0;
+}
+.history-info { flex: 1; min-width: 0; }
+.history-lang { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; }
+.history-snippet {
+  font-family: var(--font-code); font-size: 12px; color: var(--text-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 3px;
+}
+.history-time { font-size: 12px; color: var(--text-3); flex-shrink: 0; }
+
+/* ─── About Page ─────────────────────────────────────────── */
+.about-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+.about-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 1.5rem;
+}
+.about-card i { font-size: 28px; color: var(--accent); display: block; margin-bottom: 12px; }
+.about-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; color: var(--text-1); }
+.about-card p { font-size: 13px; color: var(--text-2); line-height: 1.6; }
+
+/* ─── Toast ──────────────────────────────────────────────── */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+  background: var(--text-1); color: var(--bg); padding: 10px 20px;
+  border-radius: var(--radius-xl); font-size: 13px; font-weight: 500;
+  opacity: 0; transition: all 0.25s ease; z-index: 9999; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ─── Scrollbar ──────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-md); border-radius: 99px; }
+
+</style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-inner">
+      <div class="nav-brand">
+        <span class="brand-icon"><i class="ti ti-terminal-2"></i></span>
+        <span class="brand-name">CodeReview <span class="brand-ai">AI</span></span>
+      </div>
+      <div class="nav-links">
+        <a href="#" class="nav-link active" data-page="review">Review</a>
+        <a href="#" class="nav-link" data-page="history">History</a>
+        <a href="#" class="nav-link" data-page="about">About</a>
+      </div>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+        <i class="ti ti-moon"></i>
+      </button>
+    </div>
+  </nav>
+
+  <!-- PAGES -->
+  <main class="main">
+
+    <!-- ===== REVIEW PAGE ===== -->
+    <section class="page active" id="page-review">
+      <div class="page-hero">
+        <h1 class="hero-title">Instant AI code review<br><span class="hero-accent">with complexity analysis</span></h1>
+        <p class="hero-sub">Paste any code. Get bugs, security issues, the best optimized solution, and time/space complexity — all in one shot.</p>
+      </div>
+
+      <div class="review-layout">
+        <!-- LEFT: Input panel -->
+        <div class="panel panel-input">
+          <div class="panel-header">
+            <span class="panel-title"><i class="ti ti-code"></i> Your code</span>
+            <div class="panel-actions">
+              <select id="lang" class="select-lang">
+                <option value="auto">Auto-detect</option>
+                <option value="JavaScript">JavaScript</option>
+                <option value="TypeScript">TypeScript</option>
+                <option value="Python">Python</option>
+                <option value="Java">Java</option>
+                <option value="C++">C++</option>
+                <option value="Go">Go</option>
+                <option value="Rust">Rust</option>
+                <option value="SQL">SQL</option>
+                <option value="PHP">PHP</option>
+                <option value="Ruby">Ruby</option>
+                <option value="Swift">Swift</option>
+                <option value="Kotlin">Kotlin</option>
+              </select>
+              <button class="btn-icon" id="clearBtn" title="Clear code"><i class="ti ti-trash"></i></button>
+              <button class="btn-icon" id="copyBtn" title="Copy code"><i class="ti ti-copy"></i></button>
+            </div>
+          </div>
+
+          <div class="focus-row">
+            <span class="focus-label">Focus:</span>
+            <label class="chip active"><input type="checkbox" checked id="f-bugs"> <i class="ti ti-bug"></i> Bugs</label>
+            <label class="chip active"><input type="checkbox" checked id="f-security"> <i class="ti ti-shield-lock"></i> Security</label>
+            <label class="chip active"><input type="checkbox" checked id="f-perf"> <i class="ti ti-bolt"></i> Performance</label>
+            <label class="chip active"><input type="checkbox" checked id="f-style"> <i class="ti ti-palette"></i> Style</label>
+            <label class="chip active"><input type="checkbox" checked id="f-best"> <i class="ti ti-stars"></i> Best Solution</label>
+          </div>
+
+          <div class="editor-wrap">
+            <textarea id="codeInput" spellcheck="false" placeholder="// Paste your code here…
+// Example:
+function findDuplicates(arr) {
+  let result = [];
+  for (let i = 0; i &lt; arr.length; i++) {
+    for (let j = i + 1; j &lt; arr.length; j++) {
+      if (arr[i] === arr[j] &amp;&amp; !result.includes(arr[j])) {
+        result.push(arr[j]);
+      }
+    }
+  }
+  return result;
+}"></textarea>
+            <div class="editor-footer">
+              <span class="line-count" id="lineCount">0 lines</span>
+              <span class="char-count" id="charCount">0 chars</span>
+            </div>
+          </div>
+
+          <button class="btn-review" id="reviewBtn">
+            <i class="ti ti-player-play"></i>
+            <span>Analyze code</span>
+          </button>
+        </div>
+
+        <!-- RIGHT: Results panel -->
+        <div class="panel panel-results" id="resultsPanel">
+          <div class="results-empty" id="resultsEmpty">
+            <i class="ti ti-sparkles"></i>
+            <p>Your analysis will appear here</p>
+            <span>Paste code and click "Analyze code"</span>
+          </div>
+          <div id="resultsContent" style="display:none;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== HISTORY PAGE ===== -->
+    <section class="page" id="page-history">
+      <div class="page-hero">
+        <h1 class="hero-title">Review <span class="hero-accent">history</span></h1>
+        <p class="hero-sub">All your past code reviews from this session.</p>
+      </div>
+      <div class="history-list" id="historyList">
+        <div class="empty-history">
+          <i class="ti ti-history"></i>
+          <p>No reviews yet</p>
+          <span>Analyze some code to see your history here.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== ABOUT PAGE ===== -->
+    <section class="page" id="page-about">
+      <div class="page-hero">
+        <h1 class="hero-title">About <span class="hero-accent">CodeReview AI</span></h1>
+        <p class="hero-sub">Built on Claude — the most capable AI for code understanding.</p>
+      </div>
+      <div class="about-grid">
+        <div class="about-card">
+          <i class="ti ti-bug"></i>
+          <h3>Bug detection</h3>
+          <p>Catches logic errors, null pointer exceptions, off-by-one errors, and edge cases your tests might miss.</p>
+        </div>
+        <div class="about-card">
+          <i class="ti ti-shield-lock"></i>
+          <h3>Security analysis</h3>
+          <p>Identifies SQL injection, XSS, insecure deserialization, exposed secrets, and OWASP Top 10 vulnerabilities.</p>
+        </div>
+        <div class="about-card">
+          <i class="ti ti-bolt"></i>
+          <h3>Performance review</h3>
+          <p>Spots inefficient algorithms, unnecessary loops, memory leaks, and N+1 query problems.</p>
+        </div>
+        <div class="about-card">
+          <i class="ti ti-stars"></i>
+          <h3>Best solution</h3>
+          <p>Suggests the most optimal rewrite of your code with full time and space complexity breakdown.</p>
+        </div>
+        <div class="about-card">
+          <i class="ti ti-chart-bar"></i>
+          <h3>Complexity analysis</h3>
+          <p>Explains Big-O time and space complexity for both your original code and the suggested best solution.</p>
+        </div>
+        <div class="about-card">
+          <i class="ti ti-language"></i>
+          <h3>Multi-language</h3>
+          <p>Supports JavaScript, TypeScript, Python, Java, C++, Go, Rust, SQL, PHP, Ruby, Swift, Kotlin, and more.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+/* ───────────────────────────────────────────────────
+   CodeReview AI  —  app.js
+─────────────────────────────────────────────────── */
+
+// ── State ──────────────────────────────────────────
+const state = { history: [] };
+
+// ── DOM refs ───────────────────────────────────────
+const codeInput    = document.getElementById('codeInput');
+const reviewBtn    = document.getElementById('reviewBtn');
+const resultsEmpty = document.getElementById('resultsEmpty');
+const resultsContent = document.getElementById('resultsContent');
+const lineCountEl  = document.getElementById('lineCount');
+const charCountEl  = document.getElementById('charCount');
+const historyList  = document.getElementById('historyList');
+const themeToggle  = document.getElementById('themeToggle');
+const toast        = document.getElementById('toast');
+
+// ── Theme ──────────────────────────────────────────
+(function initTheme() {
+  const saved = localStorage.getItem('cr-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = saved || (prefersDark ? 'dark' : 'light');
+  applyTheme(theme);
+})();
+
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  themeToggle.innerHTML = t === 'dark'
+    ? '<i class="ti ti-sun"></i>'
+    : '<i class="ti ti-moon"></i>';
+  localStorage.setItem('cr-theme', t);
+}
+
+themeToggle.addEventListener('click', () => {
+  const current = document.documentElement.getAttribute('data-theme');
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+});
+
+// ── Navigation ─────────────────────────────────────
+document.querySelectorAll('.nav-link').forEach(link => {
+  link.addEventListener('click', e => {
+    e.preventDefault();
+    const page = link.dataset.page;
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    link.classList.add('active');
+    document.getElementById('page-' + page).classList.add('active');
+    if (page === 'history') renderHistory();
+  });
+});
+
+// ── Focus chips ────────────────────────────────────
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => chip.classList.toggle('active'));
+});
+
+// ── Editor counters ────────────────────────────────
+codeInput.addEventListener('input', updateCounters);
+function updateCounters() {
+  const text = codeInput.value;
+  const lines = text ? text.split('\n').length : 0;
+  lineCountEl.textContent = lines + ' line' + (lines !== 1 ? 's' : '');
+  charCountEl.textContent = text.length + ' chars';
+}
+updateCounters();
+
+// ── Clear & Copy ───────────────────────────────────
+document.getElementById('clearBtn').addEventListener('click', () => {
+  codeInput.value = '';
+  updateCounters();
+  resultsEmpty.style.display = 'flex';
+  resultsContent.style.display = 'none';
+  showToast('Code cleared');
+});
+
+document.getElementById('copyBtn').addEventListener('click', () => {
+  if (!codeInput.value.trim()) return;
+  navigator.clipboard.writeText(codeInput.value).then(() => showToast('Code copied!'));
+});
+
+// ── Helpers ────────────────────────────────────────
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+function timeAgo(ts) {
+  const d = (Date.now() - ts) / 1000;
+  if (d < 60)  return 'just now';
+  if (d < 3600) return Math.floor(d / 60) + 'm ago';
+  return Math.floor(d / 3600) + 'h ago';
+}
+
+// ── Build AI prompt ────────────────────────────────
+function buildPrompt(code, lang, focuses) {
+  const langStr  = lang === 'auto' ? '' : ` The language is ${lang}.`;
+  const focusStr = focuses.length ? focuses.join(', ') : 'general code quality';
+  return `You are a world-class code reviewer and algorithm expert. Review the following code focusing on: ${focusStr}.${langStr}
+
+Your response must be ONLY a valid JSON object — no markdown, no backticks, no extra text.
+
+JSON structure:
+{
+  "language": "<detected or specified language>",
+  "score": <integer 0-100, overall quality>,
+  "summary": "<2-3 sentence honest overall assessment>",
+  "original_complexity": {
+    "time": "<e.g. O(n²)>",
+    "space": "<e.g. O(n)>",
+    "time_explanation": "<1 sentence why>",
+    "space_explanation": "<1 sentence why>"
+  },
+  "issues": [
+    {
+      "severity": "<critical|warning|info|positive>",
+      "title": "<short title, max 8 words>",
+      "description": "<clear explanation, 2-3 sentences>",
+      "fix": "<specific improved code snippet, or empty string for positive items>"
+    }
+  ],
+  "best_solution": {
+    "title": "<name of the optimal approach, e.g. 'Hash Set approach'>",
+    "explanation": "<2-3 sentence explanation of why this is better>",
+    "code": "<full optimized code implementation>",
+    "complexity": {
+      "time": "<e.g. O(n)>",
+      "space": "<e.g. O(n)>",
+      "time_explanation": "<1 sentence why>",
+      "space_explanation": "<1 sentence why>"
+    },
+    "improvement": "<1 sentence comparing to original, e.g. 'Reduces time from O(n²) to O(n)'>"
+  }
+}
+
+Rules:
+- Include 3-6 issues. Always include at least one "positive" if code has merits.
+- The best_solution must be a COMPLETE, RUNNABLE implementation in the same language.
+- If the code is already optimal, still show the best solution with minor improvements.
+- Be specific and technical. Mention exact line numbers or patterns where relevant.
+
+Code to review:
+\`\`\`
+${code}
+\`\`\``;
+}
+
+// ── Get active focuses ─────────────────────────────
+function getActiveFocuses() {
+  return [
+    { id: 'f-bugs',     label: 'bugs and logic errors' },
+    { id: 'f-security', label: 'security vulnerabilities' },
+    { id: 'f-perf',     label: 'performance and algorithmic efficiency' },
+    { id: 'f-style',    label: 'code style and readability' },
+    { id: 'f-best',     label: 'best optimal solution with complexity analysis' },
+  ]
+  .filter(f => document.getElementById(f.id).parentElement.classList.contains('active'))
+  .map(f => f.label);
+}
+
+// ── Call Anthropic API ─────────────────────────────
+async function callAPI(prompt) {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1000,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  if (!response.ok) throw new Error('API error ' + response.status);
+  const data = await response.json();
+  const text = data.content.map(i => i.text || '').join('');
+  const clean = text.replace(/```json|```/g, '').trim();
+  return JSON.parse(clean);
+}
+
+// ── Render results ─────────────────────────────────
+function renderResults(review) {
+  const score = review.score || 0;
+  const scoreClass = score >= 75 ? 's-high' : score >= 50 ? 's-mid' : 's-low';
+  const barColor   = score >= 75 ? '#0D7A55' : score >= 50 ? '#9B590A' : '#C0392B';
+
+  const sevMap = {
+    critical: { icon: 'ti-alert-triangle', ic: 'ic-critical', sb: 'sb-critical', label: 'Critical' },
+    warning:  { icon: 'ti-alert-circle',   ic: 'ic-warning',  sb: 'sb-warning',  label: 'Warning' },
+    info:     { icon: 'ti-info-circle',    ic: 'ic-info',     sb: 'sb-info',     label: 'Suggestion' },
+    positive: { icon: 'ti-circle-check',   ic: 'ic-positive', sb: 'sb-positive', label: 'Good' },
+  };
+
+  // ── Score section
+  const scoreHtml = `
+    <div class="score-section">
+      <div class="score-row">
+        <span class="score-label">Quality score</span>
+        <span class="score-number ${scoreClass}">${score}<span style="font-size:16px;font-weight:400;color:var(--text-3)">/100</span></span>
+      </div>
+      <div class="score-bar-bg">
+        <div class="score-bar-fill" style="width:${score}%;background:${barColor}"></div>
+      </div>
+      <p class="score-summary">${escHtml(review.summary || '')}</p>
+    </div>
+  `;
+
+  // ── Complexity comparison table
+  const oc = review.original_complexity || {};
+  const bc = review.best_solution?.complexity || {};
+  const complexityHtml = (oc.time || bc.time) ? `
+    <div style="padding:0 12px 4px;">
+      <table class="complexity-table">
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>Your code</th>
+            <th>Best solution</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Time complexity</td>
+            <td><span class="complexity-val">${escHtml(oc.time || '—')}</span></td>
+            <td><span class="complexity-val complexity-best">${escHtml(bc.time || '—')}</span></td>
+          </tr>
+          <tr>
+            <td>Space complexity</td>
+            <td><span class="complexity-val">${escHtml(oc.space || '—')}</span></td>
+            <td><span class="complexity-val complexity-best">${escHtml(bc.space || '—')}</span></td>
+          </tr>
+          ${oc.time_explanation ? `<tr><td colspan="3" style="font-size:12px;color:var(--text-3);padding:6px 12px;">Your code: ${escHtml(oc.time_explanation)}</td></tr>` : ''}
+          ${bc.time_explanation ? `<tr><td colspan="3" style="font-size:12px;color:var(--c-positive);padding:6px 12px;"><i class="ti ti-sparkles" style="font-size:12px"></i> Best: ${escHtml(bc.time_explanation)}</td></tr>` : ''}
+        </tbody>
+      </table>
+    </div>
+  ` : '';
+
+  // ── Issues
+  const issuesHtml = (review.issues || []).map((issue, i) => {
+    const sev = sevMap[issue.severity] || sevMap['info'];
+    const fixHtml = issue.fix ? `
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-block-label">Suggested fix</span>
+          <button class="copy-btn" onclick="copyCode(this)"><i class="ti ti-copy"></i> Copy</button>
+        </div>
+        <pre>${escHtml(issue.fix)}</pre>
+      </div>
+    ` : '';
+    return `
+      <div class="issue-card" id="issue-${i}">
+        <div class="issue-head" onclick="toggleIssue(${i})">
+          <div class="sev-icon ${sev.ic}"><i class="ti ${sev.icon}"></i></div>
+          <div class="issue-head-text">
+            <div class="issue-title">${escHtml(issue.title)}</div>
+          </div>
+          <span class="sev-badge ${sev.sb}">${sev.label}</span>
+          <i class="ti ti-chevron-right issue-chevron"></i>
+        </div>
+        <div class="issue-body-wrap">
+          <p class="issue-desc">${escHtml(issue.description)}</p>
+          ${fixHtml}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // ── Best solution section
+  const bs = review.best_solution;
+  const bestHtml = bs ? `
+    <div class="best-section">
+      <div class="best-header">
+        <i class="ti ti-stars"></i>
+        <h3>${escHtml(bs.title || 'Best solution')}</h3>
+        <span class="best-badge">Optimal</span>
+      </div>
+      <div class="best-body">
+        <p class="best-desc">${escHtml(bs.explanation || '')}</p>
+        ${bs.improvement ? `<p style="font-size:12px;font-weight:600;color:var(--c-positive);margin-bottom:12px;"><i class="ti ti-trending-up" style="font-size:13px;vertical-align:-2px;"></i> ${escHtml(bs.improvement)}</p>` : ''}
+        ${bs.code ? `
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-block-label">Optimized implementation</span>
+              <button class="copy-btn" onclick="copyCode(this)"><i class="ti ti-copy"></i> Copy</button>
+            </div>
+            <pre>${escHtml(bs.code)}</pre>
+          </div>
+        ` : ''}
+      </div>
+    </div>
+  ` : '';
+
+  resultsContent.innerHTML = `
+    ${scoreHtml}
+    ${complexityHtml}
+    <div class="issues-list">${issuesHtml}</div>
+    ${bestHtml}
+  `;
+
+  resultsEmpty.style.display = 'none';
+  resultsContent.style.display = 'block';
+}
+
+// ── Toggle issue accordion ─────────────────────────
+window.toggleIssue = function(i) {
+  document.getElementById('issue-' + i).classList.toggle('open');
+};
+
+// ── Copy code snippet ──────────────────────────────
+window.copyCode = function(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.textContent).then(() => {
+    btn.innerHTML = '<i class="ti ti-check"></i> Copied!';
+    setTimeout(() => { btn.innerHTML = '<i class="ti ti-copy"></i> Copy'; }, 1800);
+  });
+};
+
+// ── Main review action ─────────────────────────────
+reviewBtn.addEventListener('click', async () => {
+  const code = codeInput.value.trim();
+  if (!code) { showToast('Paste some code first'); return; }
+
+  const lang    = document.getElementById('lang').value;
+  const focuses = getActiveFocuses();
+  const prompt  = buildPrompt(code, lang, focuses);
+
+  reviewBtn.disabled = true;
+  reviewBtn.innerHTML = '<div class="spinner"></div><span>Analyzing…</span>';
+  resultsEmpty.style.display = 'flex';
+  resultsContent.style.display = 'none';
+
+  try {
+    const review = await callAPI(prompt);
+    renderResults(review);
+
+    // Save to history
+    state.history.unshift({
+      ts: Date.now(),
+      lang: review.language || lang,
+      score: review.score,
+      snippet: code.split('\n')[0].substring(0, 80),
+      review,
+      code
+    });
+
+    showToast('Review complete ✓');
+  } catch (err) {
+    resultsContent.innerHTML = `
+      <div style="padding:2rem;text-align:center;color:var(--c-critical);">
+        <i class="ti ti-alert-circle" style="font-size:32px;display:block;margin-bottom:10px;"></i>
+        <p style="font-weight:500;margin-bottom:6px;">Analysis failed</p>
+        <p style="font-size:13px;color:var(--text-2);">${escHtml(err.message)}</p>
+      </div>
+    `;
+    resultsEmpty.style.display = 'none';
+    resultsContent.style.display = 'block';
+  }
+
+  reviewBtn.disabled = false;
+  reviewBtn.innerHTML = '<i class="ti ti-player-play"></i><span>Analyze code</span>';
+});
+
+// ── Render history page ────────────────────────────
+function renderHistory() {
+  if (!state.history.length) {
+    historyList.innerHTML = `
+      <div class="empty-history">
+        <i class="ti ti-history"></i>
+        <p>No reviews yet</p>
+        <span>Analyze some code to see your history here.</span>
+      </div>
+    `;
+    return;
+  }
+
+  historyList.innerHTML = state.history.map((item, i) => {
+    const score = item.score || 0;
+    const col   = score >= 75 ? 'var(--c-positive)' : score >= 50 ? 'var(--c-warning)' : 'var(--c-critical)';
+    const bg    = score >= 75 ? 'var(--c-positive-bg)' : score >= 50 ? 'var(--c-warning-bg)' : 'var(--c-critical-bg)';
+    return `
+      <div class="history-item" onclick="restoreReview(${i})">
+        <div class="history-score-badge" style="background:${bg};color:${col}">${score}</div>
+        <div class="history-info">
+          <div class="history-lang">${escHtml(item.lang || 'unknown')}</div>
+          <div class="history-snippet">${escHtml(item.snippet || '')}</div>
+        </div>
+        <div class="history-time">${timeAgo(item.ts)}</div>
+        <i class="ti ti-chevron-right" style="color:var(--text-3);font-size:16px;"></i>
+      </div>
+    `;
+  }).join('');
+}
+
+// ── Restore a past review ──────────────────────────
+window.restoreReview = function(i) {
+  const item = state.history[i];
+  if (!item) return;
+  codeInput.value = item.code;
+  updateCounters();
+  renderResults(item.review);
+  // Switch to review tab
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelector('[data-page="review"]').classList.add('active');
+  document.getElementById('page-review').classList.add('active');
+};
+
+</script>
+</body>
+</html>
