@@ -16,7 +16,7 @@ const historyList  = document.getElementById('historyList');
 const themeToggle  = document.getElementById('themeToggle');
 const toast        = document.getElementById('toast');
 
-// ── Theme ──────────────────────────────────────────
+// ─Themes─────────────────────────────────────────
 (function initTheme() {
   const saved = localStorage.getItem('cr-theme');
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -169,18 +169,24 @@ function getActiveFocuses() {
 
 // ── Call Anthropic API ─────────────────────────────
 async function callAPI(prompt) {
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 1000,
-      messages: [{ role: 'user', content: prompt }]
-    })
-  });
+  const GEMINI_API_KEY = 'GEMINI_API_KEY_PLACEHOLDER'; // paste your key here
+  
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.3 }
+      })
+    }
+  );
+
   if (!response.ok) throw new Error('API error ' + response.status);
+  
   const data = await response.json();
-  const text = data.content.map(i => i.text || '').join('');
+  const text = data.candidates[0].content.parts[0].text;
   const clean = text.replace(/```json|```/g, '').trim();
   return JSON.parse(clean);
 }
