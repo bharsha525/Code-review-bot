@@ -169,8 +169,10 @@ function getActiveFocuses() {
 
 // ── Call Anthropic API ─────────────────────────────
 async function callAPI(prompt) {
+  const API_KEY = 'AQ.Ab8RN6JZNhp7bz-dBW7R-S-Psx-jIy3rltuNFXLVdxrBwSBemQ'; // paste your key
+  
   const response = await fetch(
-    '/api/gemini',
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -182,7 +184,6 @@ async function callAPI(prompt) {
   );
 
   if (!response.ok) throw new Error('API error ' + response.status);
-  
   const data = await response.json();
   const text = data.candidates[0].content.parts[0].text;
   const clean = text.replace(/```json|```/g, '').trim();
