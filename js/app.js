@@ -168,27 +168,18 @@ function getActiveFocuses() {
 }
 
 
+
 async function callAPI(prompt) {
-  const API_KEY = 'AQ.Ab8RN6JuDh4yii7-3F4T0JBA1r7qWks_PprfNGrQpiwP98zI1Q'; // paste your key
-  
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.3 }
-      })
-    }
-  );
+  const response = await fetch('/api/analyze', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt })
+  });
 
   if (!response.ok) throw new Error('API error ' + response.status);
-  const data = await response.json();
-  const text = data.candidates[0].content.parts[0].text;
-  const clean = text.replace(/```json|```/g, '').trim();
-  return JSON.parse(clean);
+  return await response.json();
 }
+
 
 // ── Render results ─────────────────────────────────
 function renderResults(review) {
