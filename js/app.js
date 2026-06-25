@@ -167,12 +167,12 @@ function getActiveFocuses() {
   .map(f => f.label);
 }
 
-// ── Call Anthropic API ─────────────────────────────
+
 async function callAPI(prompt) {
-  const API_KEY = 'AQ.Ab8RN6JZNhp7bz-dBW7R-S-Psx-jIy3rltuNFXLVdxrBwSBemQ'; // paste your key
+  const API_KEY = 'AQ.Ab8RN6JuDh4yii7-3F4T0JBA1r7qWks_PprfNGrQpiwP98zI1Q'; // paste your key
   
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
